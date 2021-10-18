@@ -1,0 +1,93 @@
+.container-fluid{
+  width: 80%; margin:auto; 
+  padding: 3%; 
+  min-height: 100%;
+  min-height: 100vh;
+  align-items: center;
+  display: flex;
+}
+
+#circle {
+  padding:1em;
+  text-align: center;
+  display:inline-block;
+  margin:0 auto;
+    
+}
+
+#mazeEnd {
+  padding:1em;
+  text-align: center;
+  display:inline-block;
+  margin:0 auto;
+
+}
+
+#treasure {
+  padding:1em;
+  text-align: center;
+  display:inline-block;
+  margin:0 auto;
+
+}
+
+#openMazeBlock{
+  height: 80px;
+  width: 80px;
+  background-color: #F0F8FF;
+  border: 5px dashed #555; 
+  text-align: center;
+}
+
+.base-timer {
+  position: relative;
+  width: 300px;
+  height: 300px;
+}
+
+.base-timer__svg {
+  transform: scaleX(-1);
+}
+
+.base-timer__circle {
+  fill: none;
+  stroke: none;
+}
+
+.base-timer__path-elapsed {
+  stroke-width: 7px;
+  stroke: grey;
+}
+
+.base-timer__path-remaining {
+  stroke-width: 7px;
+  stroke-linecap: round;
+  transform: rotate(90deg);
+  transform-origin: center;
+  transition: 1s linear all;
+  fill-rule: nonzero;
+  stroke: currentColor;
+}
+
+.base-timer__path-remaining.green {
+  color: rgb(65, 184, 131);
+}
+
+.base-timer__path-remaining.orange {
+  color: orange;
+}
+
+.base-timer__path-remaining.red {
+  color: red;
+}
+
+.base-timer__label {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}

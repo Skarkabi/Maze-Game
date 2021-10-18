@@ -1,0 +1,382 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet"  href='{% static "/css/style.css" %}?{% now "U" %}'>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/5575288f45.js" crossorigin="anonymous"></script>
+
+</head>
+
+<body>
+    <!-- h-100 takes the full height of the body-->
+    <div class="container-fluid h-100">
+        <div class="row w-100" style= "margin:auto;">
+            <div class="col-md-3 d-flex flex-column justify-content-between" style="padding-right: 3%;">
+                <div class="row" style="font-family: 'Fantasy',Papyrus; font-weight: bold; font-size: 24px;">
+                    <a id="score">{{keys}}</a><a id=scoreOutPut>&nbsp Keys Remaining</a>
+                </div>
+                <div class="row" id="countDown">
+                    
+                </div>
+                <div class="row">
+                    <div class="btn-group-vertical w-100" role="group" style="padding-top: 10px">
+                        <button type="button" id="startClassicButton" class="btn btn-outline-success w-100">Classic</button>
+                        <button type="button" id="startButton" class="btn btn-outline-success w-100">Time Trial</button>
+                        <button type="button" class="{{easyClass}}" id="easy">Easy</button>
+                        <button type="button" class="{{mediumClass}}" id="medium">Medium</button>
+                        <button type="button" class="{{hardClass}}" id="hard">Hard</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                {% for row in maze %}
+                <div class="row" class="mazeRow">
+                    {% for block in row %}
+                    <div class="col" id="openMazeBlock" 
+                         inSpot="{{block.inSpot}}" outSpot = "{{block.outSpot}}" 
+                         visited="{{block.visited}}" col="{{block.col}}" 
+                         row="{{block.row}}" treasure="{{block.treasure}}">
+                         {% if block.visited == "POS" %}
+                            <a id="circle" circle="{{block}}" col="{{block.col}}" row="{{block.row}}">
+                                <i class="fas fa-circle fa-2x" style="color: blue;"></i>
+                            </a>
+                        {% elif block.visited == "END" %}
+                            <a id="mazeEnd" finished="false">
+                                <i id="mazeEndIcon"  class="fas fa-door-closed fa-2x" style="color: red;"></i>
+                            </a>
+                        {% elif block.treasure %}
+                            <a id="treasure"><i class="fas fa-key fa-2x" style="color: #FFD700;"></i></a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+
+    var startGame = false
+    var classicGame = false
+    var timeGame = false
+
+    // All Count Down Timmer Code taken from https://css-tricks.com/how-to-create-an-animated-countdown-timer-with-html-css-and-javascript/
+    // Credit: Mateusz Rybczonec
+    const FULL_DASH_ARRAY = 283;
+    const WARNING_THRESHOLD = 60;
+    const ALERT_THRESHOLD = 20;
+
+    const COLOR_CODES = {
+        info: {
+            color: "green"
+        },
+        warning: {
+            color: "orange",
+            threshold: WARNING_THRESHOLD
+        },
+        alert: {
+            color: "red",
+            threshold: ALERT_THRESHOLD
+        }
+    };
+    
+    const TIME_LIMIT = 120;
+    let timePassed = 0;
+    let timeLeft = TIME_LIMIT;
+    let timerInterval = null;
+    let remainingPathColor = COLOR_CODES.info.color;
+
+
+    
+
+    function formatTime(time) {
+        const minutes = Math.floor(time / 60);
+        let seconds = time % 60;
+
+        if (seconds < 10) {
+            seconds = `0${seconds}`;
+        }
+
+        return `${minutes}:${seconds}`;
+    }
+
+    function setRemainingPathColor(timeLeft) {
+        const { alert, warning, info } = COLOR_CODES;
+        if (timeLeft <= alert.threshold) {
+            document
+                .getElementById("base-timer-path-remaining")
+                .classList.remove(warning.color);
+            
+            document
+                .getElementById("base-timer-path-remaining")
+                .classList.add(alert.color);
+        
+        } else if (timeLeft <= warning.threshold) {
+            document
+                .getElementById("base-timer-path-remaining")
+                .classList.remove(info.color);
+        
+            document
+                .getElementById("base-timer-path-remaining")
+                .classList.add(warning.color);
+        }
+    }
+
+    function calculateTimeFraction() {
+        const rawTimeFraction = timeLeft / TIME_LIMIT;
+        return rawTimeFraction - (1 / TIME_LIMIT) * (1 - rawTimeFraction);
+    }
+
+    function setCircleDasharray() {
+        const circleDasharray = `${(
+            calculateTimeFraction() * FULL_DASH_ARRAY
+        ).toFixed(0)} 283`;
+
+        document
+            .getElementById("base-timer-path-remaining")
+            .setAttribute("stroke-dasharray", circleDasharray);
+    }
+
+
+    $('#startClassicButton').click(function(){
+        if(!startGame){
+            startGame = true;
+            $('#startClassicButton').attr('class', 'btn btn-outline-success w-100 active');
+        }
+       
+        
+    })
+
+    $('#startButton').click(function(){
+        if(!startGame){
+            startGame = true;
+            $('#startButton').attr('class', 'btn btn-outline-success w-100 active');
+            function onTimesUp() {
+                clearInterval(timerInterval);
+            }
+
+            function startTimer() {
+                timerInterval = setInterval(() => {
+                    imePassed = timePassed += 1;
+                    timeLeft = TIME_LIMIT - timePassed;
+                    document.getElementById("base-timer-label").innerHTML = formatTime(
+                        timeLeft
+                    );
+                    setCircleDasharray();
+                    setRemainingPathColor(timeLeft);
+                    if (timeLeft === 0) {
+                        onTimesUp();
+                        alert("Sorry The Time Limit Has Been Reached")
+                        location.reload();
+                    }
+                }, 1000);
+            }
+        startTimer()
+        }
+    })
+
+    $(document).ready(function(){
+       $("#countDown").append( `
+            <div class="base-timer">
+                <svg class="base-timer__svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <g class="base-timer__circle">
+                        <circle class="base-timer__path-elapsed" cx="50" cy="50" r="45"></circle>
+                        <path
+                            id="base-timer-path-remaining"
+                            stroke-dasharray="283"
+                            class="base-timer__path-remaining
+                            ${remainingPathColor}"
+                            d="
+                            M 50, 50
+                            m -45, 0
+                            a 45,45 0 1,0 90,0
+                            a 45,45 0 1,0 -90,0
+                            "
+                        ></path>
+                    </g>
+                </svg>
+                <span id="base-timer-label" class="base-timer__label">${formatTime(timeLeft)}</span>
+            </div>
+        `);
+        //End Of Count Down Code
+
+        $(".col[id='openMazeBlock']").each(function(block){
+            if (this.getAttribute('inSpot') === "B"){
+                this.style.borderBottom = "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('inSpot') === "T"){
+                this.style.borderTop = "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('inSpot') === "L"){
+                this.style.borderLeft = "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('inSpot') === "R"){
+                this.style.borderRight= "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('outSpot').indexOf("B") >= 0){
+                this.style.borderBottom = "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('outSpot').indexOf("T") >= 0){
+                this.style.borderTop = "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('outSpot').indexOf("L") >= 0){
+                this.style.borderLeft = "5px dashed #F0F8FF"
+            }
+            if (this.getAttribute('outSpot').indexOf("R") >= 0){
+                this.style.borderRight= "5px dashed #F0F8FF"
+            }
+           
+        })
+
+    })
+
+    function gameOver(){
+        var score = parseInt($(`#score`).text())
+        if($(`#mazeEnd`).attr('finished') == "false"){
+            alert(`${score} Keys Remaining`);
+        }else{
+            alert("Congratulations, You Have Escaped The Maze!!!");
+            location.reload();
+        }
+    }
+    var allKeys = false
+    $(document).keyup(function(e){
+        if ($(`#score`).text() == 0){
+            if(!allKeys){
+                $(`#score`).empty()
+                $(`#scoreOutPut`).empty()
+                $(`#scoreOutPut`).append(`The Door Is Open!!!`)
+                allKeys = true
+            }
+            $(`#mazeEndIcon`).remove()
+            $(`#mazeEnd`).append(`<i id=mazeEndIcon class="fas fa-door-open fa-2x" style="color: red"></i>`)
+            $(`#mazeEnd`).attr('finished', 'true')
+        }
+    })
+
+    $(document).keydown(function(e){
+        if(startGame){
+        var mazeBlock = $("#openMazeBlock[visited='POS']")
+        var blockRow = parseInt(mazeBlock.attr("row"))
+        var blockCol = parseInt(mazeBlock.attr("col"))
+        var score = parseInt($(`#score`).text())
+
+        var currentBlock = $(`#openMazeBlock[row='${blockRow}'][col='${blockCol}']`)
+        var leftBlock = $(`#openMazeBlock[row='${blockRow}'][col='${blockCol - 1}']`)
+        var topBlock = $(`#openMazeBlock[row='${blockRow - 1}'][col='${blockCol}']`)
+        var rightBlock = $(`#openMazeBlock[row='${blockRow}'][col='${blockCol + 1}']`)
+        var bottomBlock = $(`#openMazeBlock[row='${blockRow + 1}'][col='${blockCol}']`)
+
+        var outLeft = mazeBlock.attr('outSpot').indexOf("L") >= 0
+        var outRight = mazeBlock.attr('outSpot').indexOf("R") >= 0
+        var outTop = mazeBlock.attr('outSpot').indexOf("T") >= 0
+        var outBottom = mazeBlock.attr('outSpot').indexOf("B") >= 0
+        var inSpot = mazeBlock.attr('inSpot')
+
+        var circleIcon = `
+            <a id="circle" circle="{{block}}" col="{{block.col}}" row="{{block.row}}">
+                <i class="fas fa-circle fa-2x" style="color: blue;"></i>
+            </a>`
+
+        if (e.which == 37) { 
+            if (outLeft || inSpot === "L") {
+                if(leftBlock.attr("visited") == "END"){
+                    gameOver()
+
+                }else{
+                    $(`[circle]`).remove()
+                    if(leftBlock.attr('treasure') == "True"){
+                        $(`#score`).empty()
+                        $(`#score`).append(` ${score - 1}`)
+                        $(`#openMazeBlock[row='${blockRow}'][col='${blockCol - 1}'] #treasure`).remove()
+                        leftBlock.attr('treasure', "False")
+                    }
+                    leftBlock.append(circleIcon)
+                    currentBlock.attr("visited", "V")
+                    leftBlock.attr("visited", "POS")
+                }
+            }
+            return false;
+        
+        }else if(e.which == 38){
+            if (outTop || inSpot === "T") {
+                if(topBlock.attr("visited") == "END"){
+                    gameOver()
+                }else{
+                    $(`[circle]`).remove()
+                    if(topBlock.attr('treasure') == "True"){
+                        $(`#score`).empty()
+                        $(`#score`).append(` ${score - 1}`)
+                        $(`#openMazeBlock[row='${blockRow - 1}'][col='${blockCol}'] #treasure`).remove()
+                        topBlock.attr('treasure', "False")
+                    }
+                    topBlock.append(circleIcon)
+                    currentBlock.attr("visited", "V")
+                    topBlock.attr("visited", "POS")
+                }
+            }
+            return false;
+        } else if(e.which == 39){
+            if (outRight || inSpot === "R") {
+                if(rightBlock.attr("visited") == "END"){
+                    gameOver()
+                }else{
+                    $(`[circle]`).remove()
+                    if(rightBlock.attr('treasure') == "True"){
+                        $(`#score`).empty()
+                        $(`#score`).append(` ${score - 1}`)
+                        $(`#openMazeBlock[row='${blockRow}'][col='${blockCol + 1}'] #treasure`).remove()
+                        rightBlock.attr('treasure', "False")
+                    }
+                    rightBlock.append(circleIcon)
+                    currentBlock.attr("visited", "V")
+                    rightBlock.attr("visited", "POS")
+                }
+            }
+            return false;
+        }else if(e.which == 40){
+            if (outBottom || inSpot === "B") {
+                if(bottomBlock.attr("visited") == "END"){
+                    gameOver()
+                }else{
+                    $(`[circle]`).remove()
+                    if(bottomBlock.attr('treasure') == "True"){
+                        $(`#score`).empty()
+                        $(`#score`).append(` ${score - 1}`)
+                        $(`#openMazeBlock[row='${blockRow + 1}'][col='${blockCol}'] #treasure`).remove()
+                        $(`#openMazeBlock[row='${blockRow + 1}'][col='${blockCol }']`).attr('treasure', "False")
+                    }
+                    bottomBlock.append(circleIcon)
+                    currentBlock.attr("visited", "V")
+                    bottomBlock.attr("visited", "POS")
+                }
+            }
+            return false;
+        }
+
+    }else{
+        alert("Please Select Game Style")
+    }
+    
+    });
+
+    $('#easy').click(function(){
+        window.location.href='/easy';
+    })
+
+    $('#medium').click(function(){
+        window.location.href='/medium';
+    })
+    
+    $('#hard').click(function(){
+        window.location.href='/hard';
+    })
+    
+</script>
